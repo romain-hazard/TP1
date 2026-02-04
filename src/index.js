@@ -27,7 +27,7 @@ var config = {
     update: update // la phase update est associée à la fonction update, du meme nom (on aurait pu avoir un autre nom)
   }
 };
-
+ 
 // création et lancement du jeu
 new Phaser.Game(config);
 
