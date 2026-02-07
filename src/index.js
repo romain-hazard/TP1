@@ -30,7 +30,7 @@ var config = {
  
 // création et lancement du jeu
 new Phaser.Game(config);
-
+// kjbe
 var groupe_plateformes;
 var player;
 var clavier;
@@ -39,6 +39,12 @@ var score = 0;
 var zone_texte_score;
 var groupe_bombes;
 var gameOver = false;
+var nbSauts = 0;
+var SAUT_MAX = 2;
+var textePerdu;
+var boutonRejouer;
+var etoilesCapturees;
+
 
 
 
@@ -47,41 +53,63 @@ function chocAvecBombe(un_player, une_bombe) {
  player.setTint(0xff0000);
  player.anims.play("anim_face");
  gameOver = true;
+
+ textePerdu = this.add.text(400, 250, "PERDU", {
+    fontSize: "64px",
+    fill: "#ff0000"
+  }).setOrigin(0.5);
+boutonRejouer = this.add.text(400, 330, "REJOUER", {
+    fontSize: "32px",
+    fill: "#000",
+    backgroundColor: "#ffffff",
+    padding: { x: 20, y: 10 }
+  })
+ .setOrigin(0.5)
+  .setInteractive()
+  .on("pointerdown", () => {
+    this.scene.restart();
+    gameOver = false;
+  });
+
 }
 
 
 
 function ramasserEtoile(un_player, une_etoile) {
- // on désactive le "corps physique" de l'étoile mais aussi sa texture
- // l'étoile existe alors sans exister : elle est invisible et ne peut plus intéragir
- une_etoile.disableBody(true, true);
+    
+    une_etoile.disableBody(true, true);
 
-if (groupe_etoiles.countActive(true) === 0) {
- // si ce nombre est égal à 0 : on va réactiver toutes les étoiles désactivées
- // pour chaque étoile etoile_i du groupe, on réacttive etoile_i avec la méthode enableBody
- // ceci s'ecrit bizarrement : avec un itérateur sur les enfants (children) du groupe (equivalent du for)
- groupe_etoiles.children.iterate(function iterateur(etoile_i) {
- etoile_i.enableBody(true, etoile_i.x, 0, true, true);
- });
+   
+    etoilesCapturees++;
+
+    score += 10;
+    zone_texte_score.setText("Score: " + score);
+
+   
+    if (etoilesCapturees === 8) {
+        var x;
+        if (player.x < 400) {
+            x = Phaser.Math.Between(400, 800);
+        } else {
+            x = Phaser.Math.Between(0, 400);
+        }
+        var une_bombe = groupe_bombes.create(x, 16, "img_bombe");
+        une_bombe.setBounce(1);
+        une_bombe.setCollideWorldBounds(true);
+        une_bombe.setVelocity(Phaser.Math.Between(-200, 200), 20);
+        une_bombe.allowGravity = false;
+    }
+
+   
+    if (groupe_etoiles.countActive(true) === 0) {
+        groupe_etoiles.children.iterate(function iterateur(etoile_i) {
+            etoile_i.enableBody(true, etoile_i.x, 0, true, true);
+        });
+        
+        etoilesCapturees = 0;
+    }
 }
 
-score += 10;
- zone_texte_score.setText("Score: " + score);
-
-var x;
- if (player.x < 400) {
- x = Phaser.Math.Between(400, 800);
- } else {
- x = Phaser.Math.Between(0, 400);
- }
- var une_bombe = groupe_bombes.create(x, 16, "img_bombe");
- une_bombe.setBounce(1);
- une_bombe.setCollideWorldBounds(true);
- une_bombe.setVelocity(Phaser.Math.Between(-200, 200), 20);
- une_bombe.allowGravity = false;
- 
-
-}
 
 /***********************************************************************/
 /** FONCTION PRELOAD 
@@ -99,6 +127,7 @@ this.load.spritesheet("img_perso", "src/assets/dude.png", {
  frameHeight: 48
  });
 this.load.image("img_etoile", "src/assets/star.png");
+this.load.image("img_bombe", "src/assets/bomb.png");
 }
 
 /***********************************************************************/
@@ -194,14 +223,19 @@ if (clavier.right.isDown) {
  player.setVelocityX(0);
  player.anims.play('anim_face');
 }
-if (clavier.space.isDown && player.body.touching.down) {
- player.setVelocityY(-330);
- }
+if (Phaser.Input.Keyboard.JustDown(clavier.space) && nbSauts < SAUT_MAX) {
+  player.setVelocityY(-330);
+  nbSauts++;
+}
+
 
 
 if (gameOver) {
  return;
  }
- 
+ if (player.body.touching.down) {
+  nbSauts = 0;
 }
 
+
+}
