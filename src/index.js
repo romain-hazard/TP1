@@ -120,6 +120,12 @@ function ramasserEtoile(un_player, une_etoile) {
  * On y trouve surtout le chargement des assets (images, son ..)
  */
 function preload() {
+
+
+this.load.image("Phaser_tuilesdejeu", "src/assets/tuilesJeu.png");
+
+// chargement de la carte
+this.load.tilemapTiledJSON("carte", "src/assets/map.json");  
 this.load.image("img_ciel", "src/assets/sky.png");
 this.load.image("img_plateforme", "src/assets/platform.png");
 this.load.spritesheet("img_perso", "src/assets/dude.png", {
@@ -141,15 +147,50 @@ this.load.image("img_bombe", "src/assets/bomb.png");
  * ainsi que toutes les instructions permettant de planifier des evenements
  */
 function create() {
-this.add.image(400, 300, "img_ciel");
-groupe_plateformes = this.physics.add.staticGroup();
+
+const carteDuNiveau = this.add.tilemap("carte");
+
+// chargement du jeu de tuiles
+const tileset = carteDuNiveau.addTilesetImage(
+          "tuiles_de_jeu",
+          "Phaser_tuilesdejeu"
+        );  
+const calque_background = carteDuNiveau.createLayer(
+          "calque_background",
+          tileset
+        );
+
+// chargement du calque calque_background_2
+const calque_background_2 = carteDuNiveau.createLayer(
+          "calque_background_2",
+          tileset
+        );
+
+// chargement du calque calque_plateformes
+const calque_plateformes = carteDuNiveau.createLayer(
+          "calque_plateformes",
+          tileset
+        );  
+calque_plateformes.setCollisionByProperty({ estSolide: true }); 
+
+player = this.physics.add.sprite(0, 0, 'img_perso');
+player.setCollideWorldBounds(true);     
+this.physics.add.collider(player, calque_plateformes);
+
+this.physics.world.setBounds(0, 0, 3200, 640);
+//  ajout du champs de la caméra de taille identique à celle du monde
+this.cameras.main.setBounds(0, 0, 3200, 640);
+// ancrage de la caméra sur le joueur
+this.cameras.main.startFollow(player);  
+
+//this.add.image(400, 300, "img_ciel");
+/*groupe_plateformes = this.physics.add.staticGroup();
 groupe_plateformes.create(200, 584, "img_plateforme");
 groupe_plateformes.create(600, 584, "img_plateforme");
 groupe_plateformes.create(50, 300, "img_plateforme");
 groupe_plateformes.create(600, 450, "img_plateforme");
-groupe_plateformes.create(750, 270, "img_plateforme");
-player = this.physics.add.sprite(100, 450, 'img_perso');
-player.setCollideWorldBounds(true);
+groupe_plateformes.create(750, 270, "img_plateforme");*/
+
 this.physics.add.collider(player, groupe_plateformes);
 player.setBounce(0.2);
 clavier = this.input.keyboard.createCursorKeys();
@@ -189,7 +230,7 @@ this.anims.create({
  groupe_etoiles.create(coordX, 10, "img_etoile");
  }
 
- this.physics.add.collider(groupe_etoiles, groupe_plateformes);
+ this.physics.add.collider(groupe_etoiles, calque_plateformes);
 
  groupe_etoiles.children.iterate(function iterateur(etoile_i) {
  // On tire un coefficient aléatoire de rerebond : valeur entre 0.4 et 0.8
@@ -200,9 +241,9 @@ this.anims.create({
 
 this.physics.add.overlap(player, groupe_etoiles, ramasserEtoile, null, this);
 
-zone_texte_score = this.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
+zone_texte_score = this.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#c40c0c' });
 groupe_bombes = this.physics.add.group();
-this.physics.add.collider(groupe_bombes, groupe_plateformes);
+this.physics.add.collider(groupe_bombes, calque_plateformes);
 this.physics.add.collider(player, groupe_bombes, chocAvecBombe, null, this);
 
 }
@@ -223,11 +264,14 @@ if (clavier.right.isDown) {
  player.setVelocityX(0);
  player.anims.play('anim_face');
 }
-if (Phaser.Input.Keyboard.JustDown(clavier.space) && nbSauts < SAUT_MAX) {
-  player.setVelocityY(-330);
-  nbSauts++;
-}
+/*if (Phaser.Input.Keyboard.JustDown(clavier.space) && nbSauts < SAUT_MAX) {
+  player.setVelocityY(-200);
+  nbSauts++; 
+}*/
 
+if (clavier.up.isDown && player.body.blocked.down) {
+          player.setVelocityY(-400);
+        }  
 
 
 if (gameOver) {
